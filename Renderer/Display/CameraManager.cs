@@ -44,7 +44,7 @@ public class CameraManager
         switch (CameraLayout)
         {
             case CameraLayout.Single:
-                CameraSlots[_currentCameraSlotIndex].Update(new Point(0, 0), DisplaySize);
+                CameraSlots[_currentCameraSlotIndex].Update(new Point(0, 0), DisplaySize, DisplaySize);
                 break;
             case CameraLayout.Matrix:
                 // Determine dimensions for each slot
@@ -61,7 +61,7 @@ public class CameraManager
                     var slotPos = new Point(camX * slotWidth, camY * slotHeight);
                     var slotSize = new Size(slotWidth, slotHeight);
 
-                    CameraSlots[(_currentCameraSlotIndex + i) % NumberOfCameras].Update(slotPos, slotSize);
+                    CameraSlots[(_currentCameraSlotIndex + i) % NumberOfCameras].Update(slotPos, slotSize, DisplaySize);
                 }
                 break;
             default:
