@@ -20,7 +20,7 @@ Console.WriteLine("Starting render");
 
 var cameraManager = new CameraManager(new Size(windowWidth, windowHeight), CameraLayout.Matrix);
 cameraManager.AddCamera(
-    // new SampledCamera( // CPU with BVH
+    //new SampledCamera( // CPU with BVH
     new OpenCLCamera( // GPU
         new Vector3(0, 0, -4),
         Vector3.UnitY, 

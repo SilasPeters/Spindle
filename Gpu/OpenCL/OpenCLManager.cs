@@ -165,8 +165,6 @@ public class OpenCLManager
             {
                 throw new Exception($"Error {err}: finishing queue");
             }
-
-            Console.WriteLine("Read Buffer Queued");
         }
     }
     
