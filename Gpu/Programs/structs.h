@@ -18,8 +18,8 @@ typedef struct
 {
     float3 camera_position;
     float3 frustum_top_left;
-    float3 frustum_horizontal;
-    float3 frustum_vertical;
+    float3 frustum_horizontal_step;
+    float3 frustum_vertical_step;
     int num_spheres;
     int num_triangles;
 } SceneInfo;
@@ -46,8 +46,7 @@ enum MaterialType {
 
 typedef struct
 {
-    float3 color;
-    float albedo;
+    float3 color_times_albedo;
     enum MaterialType type;
 } Material;
 

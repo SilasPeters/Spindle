@@ -17,8 +17,8 @@ public class BufferConverter
             NumTriangles = scene.Objects.OfType<Triangle>().Count(),
             CameraPosition = ClFloat3.FromVector3(camera.Position),
             FrustumTopLeft = ClFloat3.FromVector3(camera.FrustumTopLeft),
-            FrustumHorizontal = ClFloat3.FromVector3(camera.FrustumHorizontal),
-            FrustumVertical = ClFloat3.FromVector3(camera.FrustumVertical)
+            FrustumHorizontalStep = ClFloat3.FromVector3(camera.FrustumHorizontal / (camera.ImageSize.Width - 1)),
+            FrustumVerticalStep = ClFloat3.FromVector3(camera.FrustumVertical / (camera.ImageSize.Height - 1)),
         };
         
         // Gather all used materials
@@ -34,13 +34,11 @@ public class BufferConverter
             {
                 case Engine.Materials.Diffuse diffuseMat:
                     material.Type = MaterialType.Diffuse;
-                    material.Color = ClFloat3.FromVector3(diffuseMat.Color);
-                    material.Albedo = diffuseMat.Albedo;
+                    material.ColorTimesAlbedo = ClFloat3.FromVector3(diffuseMat.Color * diffuseMat.Albedo);
                     break;
                 case Engine.Materials.Reflective reflectiveMat:
                     material.Type = MaterialType.Reflective;
-                    material.Color = ClFloat3.FromVector3(reflectiveMat.Color);
-                    material.Albedo = reflectiveMat.Albedo;
+                    material.ColorTimesAlbedo = ClFloat3.FromVector3(reflectiveMat.Color  * reflectiveMat.Albedo);
                     break;
                 default:
                     throw new Exception("Material type not yet supported: " + obj.Material.GetType().Name);

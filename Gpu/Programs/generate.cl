@@ -14,22 +14,20 @@ __kernel void generate(
     uint ray_index = new_ray_queue[i];
 
     // Retrieve screen information, communicated from logic kernel
-    float x = rays[ray_index].origin.x;
-    float y = rays[ray_index].origin.y;
+    uint pixel_x = rays[ray_index].origin.x;
+    uint pixel_y = rays[ray_index].origin.y;
     uint width = rays[ray_index].direction[0];
     uint height = rays[ray_index].direction[1];
 
     // Draw line to pixel from camera
-    float x_percentage = x / (width - 1);
-    float y_percentage = y / (height - 1);
     float3 cam_to_pixel = scene_info->frustum_top_left
-      + x_percentage * scene_info->frustum_horizontal
-      - y_percentage * scene_info->frustum_vertical;
+      + pixel_x * scene_info->frustum_horizontal_step
+      - pixel_y * scene_info->frustum_vertical_step;
 
     // Create new ray
     // Note how this overwrites original screen information in buffer
     rays[ray_index].origin = scene_info->camera_position;
-    rays[ray_index].direction = normalize(cam_to_pixel);
+    rays[ray_index].direction = fast_normalize(cam_to_pixel);
     rays[ray_index].accumulated_luminance = 1;
     rays[ray_index].latest_luminance_sample = -1; // Marker for that we have never checked it yet
     // rays[ray_index].averaged_samples = 1;

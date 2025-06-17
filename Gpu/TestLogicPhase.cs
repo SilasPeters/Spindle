@@ -20,20 +20,17 @@ public static partial class KernelTests
             new()
             {
                 Type = MaterialType.Diffuse,
-                Albedo = .78f,
-                Color = new ClFloat3 { X = 20, Y = 30, Z = 40 },
+                ColorTimesAlbedo = new ClFloat3 { X = 20 * .78f, Y = 30 * .78f, Z = 40 * .78f },
             },
             new()
             {
                 Type = MaterialType.Diffuse,
-                Albedo = .69f,
-                Color = new ClFloat3 { X = 25, Y = 35, Z = 45 },
+                ColorTimesAlbedo = new ClFloat3 { X = 25 * .69f, Y = 35 * .69f, Z = 45 * .69f },
             },
             new()
             {
                 Type = MaterialType.Reflective,
-                Albedo = 1f,
-                Color = new ClFloat3 { X = 100, Y = 101, Z = 102 },
+                ColorTimesAlbedo = new ClFloat3 { X = 100, Y = 101, Z = 102 },
             }
         };
 

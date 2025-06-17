@@ -33,8 +33,8 @@ public static partial class KernelTests
             {
                 CameraPosition = ClFloat3.FromVector3(camera.Position),
                 FrustumTopLeft = ClFloat3.FromVector3(camera.FrustumTopLeft),
-                FrustumHorizontal = ClFloat3.FromVector3(camera.FrustumHorizontal),
-                FrustumVertical = ClFloat3.FromVector3(camera.FrustumVertical),
+                FrustumHorizontalStep = ClFloat3.FromVector3(camera.FrustumHorizontal),
+                FrustumVerticalStep = ClFloat3.FromVector3(camera.FrustumVertical),
                 NumSpheres = 40,
                 NumTriangles = 20
             }

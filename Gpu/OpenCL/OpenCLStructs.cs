@@ -67,28 +67,26 @@ public struct ClSceneInfo
 {
     public ClFloat3 CameraPosition; // 16 bytes
     public ClFloat3 FrustumTopLeft; // 16 bytes
-    public ClFloat3 FrustumHorizontal; // 16 bytes
-    public ClFloat3 FrustumVertical; // 16 bytes
+    public ClFloat3 FrustumHorizontalStep; // 16 bytes
+    public ClFloat3 FrustumVerticalStep; // 16 bytes
     public int NumSpheres; // 4 bytes
     public int NumTriangles; // 4 bytes
     // 8 bytes unused
 
     public override string ToString() =>
         $"ClSceneInfo: (Spheres: {NumSpheres}, Triangles: {NumTriangles}, CameraPosition: {CameraPosition}," +
-        $" FrustumTopLeft: {FrustumTopLeft}, FrustumHorizontal: {FrustumHorizontal}, FrustumVertical: {FrustumVertical})";
+        $" FrustumTopLeft: {FrustumTopLeft}, FrustumHorizontal: {FrustumHorizontalStep}, FrustumVertical: {FrustumVerticalStep})";
 }
 
 
 [StructLayout(LayoutKind.Sequential, Size = 32)]
-public struct ClMaterial // Depending on type, not all fields are used
+public struct ClMaterial
 {
-    public ClFloat3 Color; // 16 bytes
-    public float Albedo; // 4 bytes
+    public ClFloat3 ColorTimesAlbedo; // 16 bytes
     public MaterialType Type; // 4 bytes
     // 12 empty bytes
 
-    public override string ToString() =>
-        $"ClMaterial: Type: {Type}, Albedo: {Albedo} Color: {Color})";
+    public override string ToString() => $"ClMaterial: Type: {Type}, ColorTimesAlbedo: {ColorTimesAlbedo})";
 }
 
 public enum MaterialType : uint // 4 bytes

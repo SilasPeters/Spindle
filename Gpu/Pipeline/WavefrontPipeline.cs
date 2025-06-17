@@ -93,7 +93,6 @@ public class WavefrontPipeline
 
         ShadeDiffusePhase = new ShadeDiffusePhase(
             Manager, "shade_diffuse.cl", "shade_diffuse",
-            SceneBuffers.Materials,
             QueueStates,
             ShadeDiffuseQueue,
             ExtendRayQueue,
@@ -104,7 +103,6 @@ public class WavefrontPipeline
 
         ShadeReflectivePhase = new ShadeReflectivePhase(
             Manager, "shade_reflective.cl", "shade_reflective",
-            SceneBuffers.Materials,
             QueueStates,
             ShadeReflectiveQueue,
             ExtendRayQueue,

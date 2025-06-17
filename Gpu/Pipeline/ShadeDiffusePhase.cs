@@ -20,7 +20,6 @@ public class ShadeDiffusePhase : Phase
         OpenCLManager manager,
         string path,
         string kernel,
-        Buffer materials,
         Buffer queueStates,
         Buffer shadeDiffuseQueue,
         Buffer extendRayQueue,
@@ -36,7 +35,6 @@ public class ShadeDiffusePhase : Phase
             .AddKernel(
                 "shade_diffuse.cl",
                 kernel,
-                materials,
                 queueStates,
                 shadeDiffuseQueue,
                 extendRayQueue,

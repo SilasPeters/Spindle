@@ -36,8 +36,8 @@ __kernel void logic(
         new_ray_queue[queue_index] = i; // Point to this ray
 
         // Communicate screen information (assumes this kernel is run in 2D over all pixels)
-        float x = get_global_id(0);
-        float y = get_global_id(1);
+        uint x = get_global_id(0);
+        uint y = get_global_id(1);
         path_states[i].origin = (float3)(x, y, 0); // Origin will be overwritten
         uint width = get_global_size(0); // assumes image size == screen size
         uint height = get_global_size(1);
@@ -53,7 +53,7 @@ __kernel void logic(
     // TODO outdated? It is (-1, -1, -1) when: direct light occluded or never sampled before
     if (any(path_states[i].latest_luminance_sample != (float3)(-1, -1, -1)))
     {
-        path_states[i].accumulated_luminance *= path_states[i].latest_luminance_sample;
+        path_states[i].accumulated_luminance *= path_states[i].latest_luminance_sample; // TODO overal fixed point arithmetics?
     }
 
     // =====> Process extension ray intersection, check for termination
@@ -61,16 +61,11 @@ __kernel void logic(
     // TODO: implement russian roulette or max depth
     if (path_states[i].t < 0) // No intersection, terminate
     {
-        // Determine ambient lighting (and skybox)
-        float a = .5 * path_states[i].direction.y + 1.0;
-        float3 ambient_color = (1 - a) * (float3)(1,1,1) + a * (float3)(0.5, 0.7, 1);
-        ambient_color = 1;
-
         // Taking the current determined sample, adjust the average
-        float sample_count = path_states[i].sample_count;
-        float3 new_sample = path_states[i].accumulated_luminance * ambient_color;
-        // path_states[i].averaged_samples *= (sample_count / (sample_count + 1)) + new_sample / (sample_count + 1);
-        path_states[i].averaged_samples = (path_states[i].averaged_samples * sample_count + new_sample) / (sample_count + 1);
+        uint sample_count = path_states[i].sample_count;
+        path_states[i].averaged_samples =
+            (path_states[i].averaged_samples * sample_count + path_states[i].accumulated_luminance)
+            / (sample_count + 1);
 
         // Take the new average and progress to next sample
         image[i] = convert_color(path_states[i].averaged_samples);
@@ -99,6 +94,9 @@ __kernel void logic(
             shade_reflective_queue[shade_reflective_queue_index] = i; // Point to this path state
             break;
     }
+
+    // We know the possible luminance in advance, store it already
+    path_states[i].latest_luminance_sample = mat.color_times_albedo;
 
     // Set arguments for the shade phase
     path_states[i].material_id = sphere.material;
