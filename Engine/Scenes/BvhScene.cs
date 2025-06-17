@@ -40,6 +40,6 @@ public class BvhScene : Scene
     /// <inheritdoc />
     public override bool TryIntersect(Ray ray, Interval interval, out Intersection intersection, ref IntersectionDebugInfo intersectionDebugInfo)
     {
-        return _bvh.TryIntersect(ray, interval, out intersection, ref intersectionDebugInfo);
+        return _bVHStrategy.TryIntersect(ray, interval, out intersection, ref intersectionDebugInfo);
     }
 }

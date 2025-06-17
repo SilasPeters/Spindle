@@ -5,9 +5,44 @@ using Engine.Scenes;
 
 namespace Engine.Strategies.BVH;
 
+public class OptimizedBvhStrategy : IBvhStrategy
+{
+    private int[] indices;
+    private List<Geometry.Geometry> primitives;
+    private List<BvhNode_> pool;
+    private BvhNode_ root;
+
+    public BvhNode Build(Scene scene)
+    {
+        // Create index array
+        int N = scene.Objects.Count;
+        indices = new int[N];
+        for (int i = 0; i < N; i++) indices[i] = i;
+        
+        // Create BVH Nodes
+        pool = new List<BvhNode_>();
+        root = new BvhNode_();
+        pool.Add(root);
+        
+        // Subdivide root node
+        root.First = 0;
+        root.Count = N;
+        root.BoundingBox = scene.GetBoundingBox();
+        root.Subdivide(pool, indices, scene.Objects);
+
+        return new BvhNode();
+    }
+
+    public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
+        ref IntersectionDebugInfo intersectionDebugInfo) =>
+        root.TryIntersectExtended(ray, distanceInterval, out intersection, ref intersectionDebugInfo, pool, indices,
+            primitives);
+}
+
 public class SplitDirectionStrategy : IBvhStrategy
 {
     public int NumOfPrimitives { get; set; }
+    private BvhNode root;
 
     public SplitDirectionStrategy(int numOfPrimitives)
     {
@@ -17,16 +52,20 @@ public class SplitDirectionStrategy : IBvhStrategy
     public BvhNode Build(Scene scene)
     {
         // Create the root bounding box.
-        var root = new BvhNode
+        root = new BvhNode
         {
             IsLeaf = false, BoundingBox = scene.GetBoundingBox(), Primitives = new List<IIntersectable>(scene.Objects)
         };
 
         var random = new Random();
-        return PopulateChildren(root, random);
+        return PopulateChildren(random);
     }
 
-    private BvhNode PopulateChildren(BvhNode root, Random random)
+    public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
+        ref IntersectionDebugInfo intersectionDebugInfo) =>
+        root.TryIntersect(ray, distanceInterval, out intersection, ref intersectionDebugInfo);
+
+    private BvhNode PopulateChildren(Random random)
     {
         Stack<BvhNode> stack = new();
         stack.Push(root);
