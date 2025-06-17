@@ -209,6 +209,7 @@ void main()
         _ebo = _gl.GenBuffer();
         _textureId = _gl.GenTexture();
         _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.UseProgram(_shaderProgram); // We dont use multiple shaders, so we can call UseProgram once
     }
 
     private void OnRender(double deltaTime) // TODO: to see immediate results, render every texture in a different frame
@@ -289,7 +290,6 @@ void main()
 
             // We rebind some things which we cleaned up earlier...
             _gl.BindVertexArray(_vao);
-            _gl.UseProgram(_shaderProgram);
             _gl.ActiveTexture(TextureUnit.Texture0);
             _gl.BindTexture(TextureTarget.Texture2D, _textureId);
             unsafe
