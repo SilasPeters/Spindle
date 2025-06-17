@@ -277,18 +277,8 @@ void main()
             // Assign the current texture to the texture uniform, such that the vertex shader gets this texture as input
             int location = _gl.GetUniformLocation(_shaderProgram, "uTexture"); // We use this method instead of a hardcoded 0 or 1 like we did earlier when defining layouts, because this time we chose not to define layouts and let GLSL figure things out.
             _gl.Uniform1(location, 0); // We bind texture unit 0 (defined earlier) to the uniform we found in the line above. Result: shader gets texture data
-
-
-
-
-            // CLEAN UP (reduces risks of changing wrong buffer, but not always required) todo: remove this at the end
-            // Unbind everything
-            _gl.BindVertexArray(0); // Must be cleaned first
-            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-            _gl.BindTexture(TextureTarget.Texture2D, 0);
-
-            // We rebind some things which we cleaned up earlier...
+            
+            // Rebind array and texture for final draw
             _gl.BindVertexArray(_vao);
             _gl.ActiveTexture(TextureUnit.Texture0);
             _gl.BindTexture(TextureTarget.Texture2D, _textureId);
