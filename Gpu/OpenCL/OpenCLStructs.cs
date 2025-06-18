@@ -62,20 +62,16 @@ public struct ClPathState
         $"MaterialId: {MaterialId}, SampleCount: {SampleCount})";
 }
 
-[StructLayout(LayoutKind.Sequential, Size = 80)]
+[StructLayout(LayoutKind.Sequential, Size = 32)]
 public struct ClSceneInfo
 {
     public ClFloat3 CameraPosition; // 16 bytes
-    public ClFloat3 FrustumTopLeft; // 16 bytes
-    public ClFloat3 FrustumHorizontalStep; // 16 bytes
-    public ClFloat3 FrustumVerticalStep; // 16 bytes
     public int NumSpheres; // 4 bytes
     public int NumTriangles; // 4 bytes
     // 8 bytes unused
 
     public override string ToString() =>
-        $"ClSceneInfo: (Spheres: {NumSpheres}, Triangles: {NumTriangles}, CameraPosition: {CameraPosition}," +
-        $" FrustumTopLeft: {FrustumTopLeft}, FrustumHorizontal: {FrustumHorizontalStep}, FrustumVertical: {FrustumVerticalStep})";
+        $"ClSceneInfo: (Spheres: {NumSpheres}, Triangles: {NumTriangles}, CameraPosition: {CameraPosition}";
 }
 
 
@@ -95,10 +91,9 @@ public enum MaterialType : uint // 4 bytes
     Reflective = 2
 }
 
-[StructLayout(LayoutKind.Sequential, Size = 20)]
+[StructLayout(LayoutKind.Sequential, Size = 16)]
 public struct ClQueueStates
 {
-    public uint NewRayLength; // 4 bytes
     public uint ExtendRayLength; // 4 bytes
     public uint ShadeDiffuseLength; // 4 bytes
     public uint ShadeReflectiveLength; // 4 bytes
@@ -106,7 +101,6 @@ public struct ClQueueStates
 
     /// <inheritdoc />
     public override string ToString() =>
-        $"{nameof(NewRayLength)}: {NewRayLength}, " +
         $"{nameof(ExtendRayLength)}: {ExtendRayLength}, " +
         $"{nameof(ShadeDiffuseLength)}: {ShadeDiffuseLength}, " +
         $"{nameof(ShadowRayLength)}: {ShadowRayLength}";

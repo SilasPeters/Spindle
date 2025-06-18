@@ -17,9 +17,6 @@ typedef struct
 typedef struct
 {
     float3 camera_position;
-    float3 frustum_top_left;
-    float3 frustum_horizontal_step;
-    float3 frustum_vertical_step;
     int num_spheres;
     int num_triangles;
 } SceneInfo;
@@ -52,7 +49,6 @@ typedef struct
 
 typedef struct
 {
-    volatile uint new_ray_length;
     volatile uint extend_ray_length;
     volatile uint shade_diffuse_length;
     volatile uint shade_reflective_length;

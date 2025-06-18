@@ -69,20 +69,21 @@ public static partial class KernelTests
         ReadWriteBuffer<ClQueueStates> queueStates = new(manager, new[] { new ClQueueStates() }); // Set all lengths to 0
         ReadWriteBuffer<uint> shadeDiffuseQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
         ReadWriteBuffer<uint> shadeReflectiveQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
-        ReadWriteBuffer<uint> newRayQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
+        ReadWriteBuffer<uint> extendRayQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
         ReadWriteBuffer<ClPathState> pathStatesBuffer = new(manager, pathStates);
         ReadOnlyBuffer<ClMaterial> materialsBuffer = new(manager, materials);
         ReadOnlyBuffer<ClSceneInfo> sceneInfoBuffer = new(manager, sceneInfo);
         ReadOnlyBuffer<ClSphere> sphereBuffer = new(manager, spheres);
         ReadOnlyBuffer<ClTriangle> triangleBuffer = new(manager, triangles);
+        ReadOnlyBuffer<ClPathState> primaryRayBuffer = new(manager, pathStates);
         ReadWriteBuffer<uint> imageBuffer = new(manager, new uint[numberOfRays]);
 
-        manager.AddBuffers(queueStates, shadeDiffuseQueue, shadeReflectiveQueue, newRayQueue, pathStatesBuffer, materialsBuffer, sceneInfoBuffer, sphereBuffer, triangleBuffer, imageBuffer);
+        manager.AddBuffers(queueStates, shadeDiffuseQueue, shadeReflectiveQueue, extendRayQueue, pathStatesBuffer, materialsBuffer, sceneInfoBuffer, sphereBuffer, triangleBuffer, imageBuffer);
         manager.AddUtilsProgram("structs.h", "structs.h");
         manager.AddUtilsProgram("random.cl", "random.cl");
         manager.AddUtilsProgram("utils.cl", "utils.cl");
         LogicPhase phase = new(manager, "logic.cl", "logic",
-            queueStates, shadeDiffuseQueue, shadeReflectiveQueue, newRayQueue, pathStatesBuffer, materialsBuffer, sceneInfoBuffer, sphereBuffer, triangleBuffer, imageBuffer);
+            queueStates, shadeDiffuseQueue, shadeReflectiveQueue, extendRayQueue, pathStatesBuffer, materialsBuffer, sceneInfoBuffer, sphereBuffer, triangleBuffer, primaryRayBuffer, imageBuffer);
 
         var globalSize = new nuint[2]
         {
