@@ -15,7 +15,7 @@ public class SplitDirectionStrategy : IBvhStrategy
         NumOfPrimitives = numOfPrimitives;
     }
     
-    public BvhNode Build(Scene scene)
+    public void Build(Scene scene)
     {
         // Create the root bounding box.
         root = new BvhNode
@@ -24,7 +24,7 @@ public class SplitDirectionStrategy : IBvhStrategy
         };
 
         var random = new Random();
-        return PopulateChildren(random);
+        PopulateChildren(random);
     }
 
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,

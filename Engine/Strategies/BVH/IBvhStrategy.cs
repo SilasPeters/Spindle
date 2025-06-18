@@ -6,6 +6,6 @@ namespace Engine.Strategies.BVH;
 
 public interface IBvhStrategy
 {
-    public BvhNode Build(Scene scene);
+    public void Build(Scene scene);
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection, ref IntersectionDebugInfo intersectionDebugInfo);
 }

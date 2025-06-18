@@ -27,14 +27,14 @@ public class BvhScene : Scene
     public BvhScene(IBvhStrategy strategy, List<Geometry.Geometry> objects, List<LightSource> lights) : base(objects, lights)
     {
         _bVHStrategy = strategy;
-        _bvh = strategy.Build(this);
+        strategy.Build(this);
     }
 
     public BvhScene(IBvhStrategy strategy, List<Geometry.Geometry> objects, List<LightSource> lights, params MeshImporter[] meshImporters)
         : base(objects, lights, meshImporters)
     {
         _bVHStrategy = strategy;
-        _bvh = strategy.Build(this);
+        strategy.Build(this);
     }
 
     /// <inheritdoc />

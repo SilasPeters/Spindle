@@ -25,7 +25,7 @@ public class OptimizedBvhStrategy : IBvhStrategy
         this.splitBins = splitBins;
     }
 
-    public BvhNode Build(Scene scene)
+    public void Build(Scene scene)
     {
         // Set number of primitives
         N = scene.Objects.Count;
@@ -42,8 +42,6 @@ public class OptimizedBvhStrategy : IBvhStrategy
         nodesUsed = 1;
         UpdateBounds(ref pool[0]);
         Subdivide(ref pool[0]);
-        
-        return new BvhNode(); // TODO: FIX THIS !!!
     }
 
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,

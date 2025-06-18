@@ -22,7 +22,7 @@ public class KDTreeStrategy : IBvhStrategy
     }
 
     /// <inheritdoc />
-    public BvhNode Build(Scene scene)
+    public void Build(Scene scene)
     {
         root = new BvhNode
         {
@@ -47,8 +47,6 @@ public class KDTreeStrategy : IBvhStrategy
             stack.Push(left);
             stack.Push(right);
         }
-
-        return root;
     }
 
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
