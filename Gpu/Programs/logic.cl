@@ -52,7 +52,7 @@ __kernel void logic(
     // TODO outdated? It is (-1, -1, -1) when: direct light occluded or never sampled before
     if (any(path_states[i].latest_luminance_sample != (float3)(-1, -1, -1)))
     {
-        path_states[i].accumulated_luminance *= path_states[i].latest_luminance_sample; // TODO overal fixed point arithmetics?
+        path_states[i].accumulated_luminance *= path_states[i].latest_luminance_sample;
     }
 
     // =====> Process extension ray intersection, check for termination

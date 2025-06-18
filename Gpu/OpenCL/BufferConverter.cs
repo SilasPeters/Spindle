@@ -19,7 +19,7 @@ public class BufferConverter
         {
             NumSpheres = scene.Objects.OfType<Sphere>().Count(),
             NumTriangles = scene.Objects.OfType<Triangle>().Count(),
-            CameraPosition = ClFloat3.FromVector3(camera.Position), // TODO no longer used?
+            CameraPosition = ClFloat3.FromVector3(camera.Position),
         };
         
         // Gather all used materials
