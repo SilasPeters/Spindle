@@ -19,8 +19,6 @@ public class OpenCLCamera : Camera
     {
         Pipeline ??= new WavefrontPipeline(renderer.Scene, this);
 
-        var output = Pipeline.Execute();
-
-        output.CopyTo(pixels); // Assumes equal length
+        Pipeline.Execute(in pixels);
     }
 }

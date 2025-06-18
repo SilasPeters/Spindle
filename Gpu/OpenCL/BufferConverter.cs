@@ -100,7 +100,7 @@ public class BufferConverter
             Spheres = new ReadWriteBuffer<ClSphere>(manager, spheres.ToArray()),
             Triangles = new ReadWriteBuffer<ClTriangle>(manager, triangles.ToArray()),
             Materials = new ReadOnlyBuffer<ClMaterial>(manager, materials.ToArray()),
-            PrimaryRays = new ReadOnlyBuffer<ClPathState>(manager,  primaryRays.ToArray()),
+            PrimaryRays = new ReadOnlyBuffer<ClPathState>(manager,  primaryRays),
         };
     }
 }
