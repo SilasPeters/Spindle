@@ -2,43 +2,9 @@
 using Engine.BoundingBoxes;
 using Engine.Geometry;
 using Engine.Scenes;
+using System.Numerics;
 
 namespace Engine.Strategies.BVH;
-
-public class OptimizedBvhStrategy : IBvhStrategy
-{
-    private int[] indices;
-    private List<Geometry.Geometry> primitives;
-    private List<BvhNode_> pool;
-    private BvhNode_ root;
-
-    public BvhNode Build(Scene scene)
-    {
-        // Create index array
-        int N = scene.Objects.Count;
-        indices = new int[N];
-        for (int i = 0; i < N; i++) indices[i] = i;
-        
-        // Create BVH Nodes
-        pool = new List<BvhNode_>();
-        root = new BvhNode_();
-        pool.Add(root);
-        
-        // Subdivide root node
-        root.First = 0;
-        root.Count = N;
-        root.BoundingBox = scene.GetBoundingBox();
-        root.Subdivide(pool, indices, scene.Objects);
-
-        return new BvhNode();
-    }
-
-    public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
-        ref IntersectionDebugInfo intersectionDebugInfo) =>
-        root.TryIntersectExtended(ray, distanceInterval, out intersection, ref intersectionDebugInfo, pool, indices,
-            primitives);
-}
-
 public class SplitDirectionStrategy : IBvhStrategy
 {
     public int NumOfPrimitives { get; set; }
