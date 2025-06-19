@@ -45,57 +45,74 @@ public class OptimizedBvhStrategy : IBvhStrategy
     }
 
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
-        ref IntersectionDebugInfo intersectionDebugInfo) => IntersectNode(ray, distanceInterval, out intersection, ref intersectionDebugInfo, pool[0]);
+        ref IntersectionDebugInfo intersectionDebugInfo) => IntersectNode(ray, distanceInterval, out intersection, ref intersectionDebugInfo);
 
     private bool IntersectNode(Ray ray, Interval distanceInterval, out Intersection intersection,
-        ref IntersectionDebugInfo intersectionDebugInfo, OptimizedBvhNode node)
+        ref IntersectionDebugInfo intersectionDebugInfo)
     {
         intersectionDebugInfo.NumberOfTraversals++;
         
-        // Check if the ray collides with the node
-        if (!node.boundingBox.TryIntersect(ray, distanceInterval, out intersection, ref intersectionDebugInfo)) return false;
+        Stack<(float, OptimizedBvhNode)> stack = new();
+        stack.Push((-float.PositiveInfinity, pool[0]));
+        intersection = Intersection.Undefined;
+        intersection.Distance = float.PositiveInfinity;
+        bool intersected = false;
 
-        // Check closest collision with primitives if node is a leaf
-        if (node.isLeaf())
+        while (stack.Count > 0)
         {
-            bool intersected = false;
-            float closest = distanceInterval.Max;
-            intersection = Intersection.Undefined;
-
-            for (int i = 0; i < node.count; i++)
+            (float depthCheck, OptimizedBvhNode node) = stack.Pop();
+            
+            // Check if we haven't already collided with a closer primitive
+            if (depthCheck > intersection.Distance)
+                continue;
+            
+            // Check closest collision with primitives if node is a leaf
+            if (node.isLeaf())
             {
-                if (!primitives[indices[node.leftFirst + i]]
-                        .TryIntersect(ray, new Interval(distanceInterval.Min, closest), out var newIntersection,
-                            ref intersectionDebugInfo))
-                    continue;
+                float closest = intersection.Distance;
 
-                intersected = true;
-                closest = newIntersection.Distance;
-                intersection = newIntersection;
+                for (int i = 0; i < node.count; i++)
+                {
+                    if (!primitives[indices[node.leftFirst + i]]
+                            .TryIntersect(ray, new Interval(distanceInterval.Min, closest), out var newIntersection,
+                                ref intersectionDebugInfo))
+                        continue;
+
+                    intersected = true;
+                    closest = newIntersection.Distance;
+                    intersection = newIntersection;
+                }
+
+                continue;
             }
-
-            return intersected;
+            
+            // Collide with children bounding boxes
+            bool leftIntersected = pool[node.leftFirst].boundingBox.TryIntersect(ray, distanceInterval, out var leftIntersection, ref intersectionDebugInfo);
+            bool rightIntersected = pool[node.leftFirst + 1].boundingBox.TryIntersect(ray, distanceInterval, out var rightIntersection, ref intersectionDebugInfo);
+            
+            switch (leftIntersected)
+            {
+                case true when !rightIntersected:
+                    stack.Push((leftIntersection.Distance, pool[node.leftFirst]));
+                    break;
+                case false when rightIntersected:
+                    stack.Push((rightIntersection.Distance, pool[node.leftFirst + 1]));
+                    break;
+                case true when rightIntersected:
+                    if (leftIntersection.Distance <= rightIntersection.Distance)
+                    {
+                        stack.Push((leftIntersection.Distance, pool[node.leftFirst]));
+                        stack.Push((rightIntersection.Distance, pool[node.leftFirst + 1]));
+                    }
+                    else
+                    {
+                        stack.Push((rightIntersection.Distance, pool[node.leftFirst + 1]));
+                        stack.Push((leftIntersection.Distance, pool[node.leftFirst]));
+                    }
+                    break;
+            }
         }
-        
-        // Collide with children
-        bool leftIntersected = IntersectNode(ray, distanceInterval, out var leftIntersection, ref intersectionDebugInfo, pool[node.leftFirst]);
-        bool rightIntersected = IntersectNode(ray, distanceInterval, out var rightIntersection, ref intersectionDebugInfo, pool[node.leftFirst + 1]);
-
-        switch (leftIntersected)
-        {
-            case false when !rightIntersected:
-                intersection = Intersection.Undefined;
-                return false;
-            case true when !rightIntersected:
-                intersection = leftIntersection;
-                return true;
-            case false when rightIntersected:
-                intersection = rightIntersection;
-                return true;
-            default:
-                intersection = leftIntersection.Distance <= rightIntersection.Distance ? leftIntersection : rightIntersection;
-                return true;
-        }
+        return intersected;
     }
     
     private void Subdivide(ref OptimizedBvhNode node)

@@ -31,6 +31,7 @@ public class SampledCamera : Camera
     {
         IntersectionDebugInfo intersectionDebugInfo = new();
 
+        // Cast rays in tiles to improve data locality
         for (var j = 0; j < this.ImageSize.Height; j++)
         {
             for (var i = 0; i < this.ImageSize.Width; i++)
