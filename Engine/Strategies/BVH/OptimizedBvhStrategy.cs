@@ -177,16 +177,48 @@ public class OptimizedBvhStrategy : IBvhStrategy
                 boundsMax = Math.Max(boundsMax, prim.GetCentroid().AxisByInt(a));
             }
             if (boundsMin == boundsMax) continue;
-            float scale = (boundsMax - boundsMin) / splitBins;
-            for (int i = 1; i < splitBins; i++)
+            
+            // Create Bins
+            Bin[] bins = new Bin[splitBins];
+            for (int i = 0; i < splitBins; i++) bins[i] = new Bin();
+            float scale = splitBins / (boundsMax - boundsMin);
+            for (int i = 0; i < node.count; i++)
             {
-                float candidatePoint = boundsMin + i * scale;
-                float cost = CalculateSah(node, a,  candidatePoint);
-                if (cost < bestCost)
+                Geometry.Geometry prim = primitives[indices[node.leftFirst + i]];
+                int binIdx = Math.Min(splitBins - 1, (int)((prim.GetCentroid().AxisByInt(a) - boundsMin) * scale));
+                bins[binIdx].count++;
+                bins[binIdx].boundingBox.Add((AxisAlignedBoundingBox)prim.GetBoundingBox());
+            }
+            
+            // Gather data of the planes between the bins
+            int binsMin1 = splitBins - 1;
+            float[] leftArea = new float[binsMin1], rightArea = new float[binsMin1];
+            int[] leftCount = new int[binsMin1], rightCount = new int[binsMin1];
+            AxisAlignedBoundingBox leftBounds = AxisAlignedBoundingBox.Empty(), rightBounds = AxisAlignedBoundingBox.Empty();
+            int leftSum = 0, rightSum = 0;
+
+            for (int i = 0; i < binsMin1; i++)
+            {
+                leftCount[i] += bins[i].count;
+                leftBounds.Add(bins[i].boundingBox);
+                leftArea[i] = leftBounds.GetArea();
+
+                int rightIdx = binsMin1 - i - 1;
+                rightCount[rightIdx] += bins[i].count;
+                rightBounds.Add(bins[rightIdx + 1].boundingBox);
+                rightArea[rightIdx] = rightBounds.GetArea();
+            }
+            
+            // Calculate SAH per plane
+            scale = (boundsMax - boundsMin) / splitBins;
+            for (int i = 1; i < binsMin1; i++)
+            {
+                float planeCost = leftCount[i] * leftArea[i] + rightCount[i] * rightArea[i];
+                if (planeCost < bestCost)
                 {
-                    splitPoint = candidatePoint;
                     axis = a;
-                    bestCost = cost;
+                    splitPoint = boundsMin + scale * (i + 1);
+                    bestCost = planeCost;
                 }
             }
         }
@@ -216,4 +248,12 @@ public class OptimizedBvhStrategy : IBvhStrategy
         float cost = leftCount * leftBox.GetArea() +  rightCount * rightBox.GetArea();
         return cost > 0 ? cost :  float.PositiveInfinity;
     }
+}
+
+public struct Bin
+{
+    public AxisAlignedBoundingBox boundingBox = AxisAlignedBoundingBox.Empty();
+    public int count = 0;
+
+    public Bin() { }
 }
