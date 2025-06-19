@@ -14,15 +14,17 @@ public class KDTreeStrategy : IBvhStrategy
     /// </summary>
     public int MaximumPrimitivesPerLeaf { get; set; }
 
+    private BvhNode root;
+
     public KDTreeStrategy(int maximumPrimitivesPerLeaf)
     {
         MaximumPrimitivesPerLeaf = maximumPrimitivesPerLeaf;
     }
 
     /// <inheritdoc />
-    public BvhNode Build(Scene scene)
+    public void Build(Scene scene)
     {
-        BvhNode root = new BvhNode
+        root = new BvhNode
         {
             BoundingBox = scene.GetBoundingBox(),
             IsLeaf = false,
@@ -45,9 +47,11 @@ public class KDTreeStrategy : IBvhStrategy
             stack.Push(left);
             stack.Push(right);
         }
-
-        return root;
     }
+
+    public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
+        ref IntersectionDebugInfo intersectionDebugInfo) =>
+        root.TryIntersect(ray,  distanceInterval, out intersection, ref intersectionDebugInfo);
 
     /// <summary>
     /// Splits the given node into two new nodes, and divides all primitives amongst them.

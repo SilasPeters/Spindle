@@ -9,4 +9,6 @@ public interface IBoundingBox : IIntersectable
     public Interval     AxisByInt(int axis);
     public Vector3      GetLowerBound();
     public Vector3      GetUpperBound();
+    public Vector3      GetExtent();
+    public float        GetArea();
 }

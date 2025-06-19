@@ -1,9 +1,9 @@
 ﻿using Engine.BoundingBoxes;
 using Engine.Geometry;
+using System.Collections.Concurrent;
 using System.Numerics;
 
 namespace Engine.AccelerationStructures.BoundingVolumeHierarchy;
-
 public class BvhNode : IIntersectable
 {
     public IBoundingBox BoundingBox;

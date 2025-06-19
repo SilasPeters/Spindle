@@ -2,31 +2,36 @@
 using Engine.BoundingBoxes;
 using Engine.Geometry;
 using Engine.Scenes;
+using System.Numerics;
 
 namespace Engine.Strategies.BVH;
-
 public class SplitDirectionStrategy : IBvhStrategy
 {
     public int NumOfPrimitives { get; set; }
+    private BvhNode root;
 
     public SplitDirectionStrategy(int numOfPrimitives)
     {
         NumOfPrimitives = numOfPrimitives;
     }
     
-    public BvhNode Build(Scene scene)
+    public void Build(Scene scene)
     {
         // Create the root bounding box.
-        var root = new BvhNode
+        root = new BvhNode
         {
             IsLeaf = false, BoundingBox = scene.GetBoundingBox(), Primitives = new List<IIntersectable>(scene.Objects)
         };
 
         var random = new Random();
-        return PopulateChildren(root, random);
+        PopulateChildren(random);
     }
 
-    private BvhNode PopulateChildren(BvhNode root, Random random)
+    public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
+        ref IntersectionDebugInfo intersectionDebugInfo) =>
+        root.TryIntersect(ray, distanceInterval, out intersection, ref intersectionDebugInfo);
+
+    private BvhNode PopulateChildren(Random random)
     {
         Stack<BvhNode> stack = new();
         stack.Push(root);

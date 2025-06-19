@@ -1,5 +1,6 @@
 using System.Numerics;
 using Engine.Geometry;
+using Engine.Strategies.BVH;
 using System.Diagnostics;
 
 namespace Engine.BoundingBoxes;
@@ -72,6 +73,16 @@ public class AxisAlignedBoundingBox : IBoundingBox
         Y = new Interval(aabbs.Select(b => b.Y));
         Z = new Interval(aabbs.Select(b => b.Z));
     }
+
+    public static AxisAlignedBoundingBox Empty()
+    {
+        AxisAlignedBoundingBox empty = new AxisAlignedBoundingBox();
+        empty.X = Interval.Empty();
+        empty.Y = Interval.Empty();
+        empty.Z = Interval.Empty();
+        return empty;
+    }
+    
     /// <inheritdoc />
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection, ref IntersectionDebugInfo intersectionDebugInfo)
     {
@@ -129,6 +140,13 @@ public class AxisAlignedBoundingBox : IBoundingBox
         return new AxisAlignedBoundingBox(boxes);
     }
 
+    public void Add(AxisAlignedBoundingBox box)
+    {
+        X.Grow(box.X);
+        Y.Grow(box.Y);
+        Z.Grow(box.Z);
+    }
+
     public Interval AxisByInt(int axis)
     {
         return axis switch
@@ -145,4 +163,13 @@ public class AxisAlignedBoundingBox : IBoundingBox
 
     /// <inheritdoc />
     public Vector3 GetUpperBound() => new(X.Max, Y.Max, Z.Max);
+
+
+    public Vector3 GetExtent() => GetUpperBound() - GetLowerBound();
+
+    public float GetArea()
+    {
+        Vector3 extent = GetExtent();
+        return extent.X * extent.Y + extent.Y * extent.Z + extent.Z * extent.X;
+    }
 }

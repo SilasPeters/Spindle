@@ -27,19 +27,19 @@ public class BvhScene : Scene
     public BvhScene(IBvhStrategy strategy, List<Geometry.Geometry> objects, List<LightSource> lights) : base(objects, lights)
     {
         _bVHStrategy = strategy;
-        _bvh = strategy.Build(this);
+        strategy.Build(this);
     }
 
     public BvhScene(IBvhStrategy strategy, List<Geometry.Geometry> objects, List<LightSource> lights, params MeshImporter[] meshImporters)
         : base(objects, lights, meshImporters)
     {
         _bVHStrategy = strategy;
-        _bvh = strategy.Build(this);
+        strategy.Build(this);
     }
 
     /// <inheritdoc />
     public override bool TryIntersect(Ray ray, Interval interval, out Intersection intersection, ref IntersectionDebugInfo intersectionDebugInfo)
     {
-        return _bvh.TryIntersect(ray, interval, out intersection, ref intersectionDebugInfo);
+        return _bVHStrategy.TryIntersect(ray, interval, out intersection, ref intersectionDebugInfo);
     }
 }

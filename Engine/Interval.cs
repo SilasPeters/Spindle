@@ -78,4 +78,10 @@ public struct Interval
     { 
         return x < Min ? Min : x > Max ? Max : x;
     }
+
+    public void Grow(Interval other)
+    {
+        Min = Math.Min(Min, other.Min);
+        Max = Math.Max(Max, other.Max);
+    }
 }
