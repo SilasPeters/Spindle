@@ -64,13 +64,14 @@ var tri = new Triangle(
 var objects = new List<Geometry> { orbBadMirror, orbLeft, orbSmall, orbCentre, orbRight, groundOrb, orbUp, orbMirror, tri };
 var lights = new List<LightSource> { new Spotlight(Vector3.One, Vector3.One) };
 
-var cuteDragonImporter = new ObjMeshImporter("Assets/cute_dragon.obj", new Vector3(0, 0, 0), matRed);
+var cuteDragonImporter = new ObjMeshImporter("Assets/cute_dragon.obj", new Vector3(0, 0, 10), matRed);
 var teaPotImporter1 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(-7, -2, 0), matKitchenWhite);
 var teaPotImporter2 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(7, -2, 0), matKitchenWhite);
 var teaPotImporter3 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(0, 8, 20), matKitchenWhite);
 var teaPotImporter4 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(-20, 40, 80), matKitchenWhite);
-//var scene = new Scene(objects, lights, teaPotImporter1); // Naive approach
-//var scene = new BvhScene(new SplitDirectionStrategy(3), objects, lights, teaPotImporter1); // Uses BVH
+var teaPotImporter5 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(0, -2.5f, 8), matKitchenWhite);
+//var scene = new Scene(objects, lights); // Naive approach
+//var scene = new BvhScene(new SplitDirectionStrategy(3), new List<Geometry>{groundOrb}, lights, teaPotImporter5); // Uses BVH
 var scene = new BvhScene(new OptimizedBvhStrategy(32), objects, lights, teaPotImporter1); // Uses Optimize BVH
 
 Console.WriteLine("Done creating acceleration structure");

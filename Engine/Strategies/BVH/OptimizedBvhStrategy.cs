@@ -45,16 +45,13 @@ public class OptimizedBvhStrategy : IBvhStrategy
     }
 
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
-        ref IntersectionDebugInfo intersectionDebugInfo) => IntersectNode(ray, distanceInterval, out intersection, ref intersectionDebugInfo);
-
-    private bool IntersectNode(Ray ray, Interval distanceInterval, out Intersection intersection,
         ref IntersectionDebugInfo intersectionDebugInfo)
     {
         intersectionDebugInfo.NumberOfTraversals++;
         
         Stack<(float, OptimizedBvhNode)> stack = new();
-        stack.Push((-float.PositiveInfinity, pool[0]));
-        intersection = Intersection.Undefined;
+        stack.Push((0, pool[0]));
+        intersection = default;
         intersection.Distance = float.PositiveInfinity;
         bool intersected = false;
 
@@ -142,6 +139,7 @@ public class OptimizedBvhStrategy : IBvhStrategy
         // Check if a split is empty
         int leftCount = i - node.leftFirst;
         if (leftCount == 0 || leftCount == node.count) return;
+        
         // Create the child nodes
         pool[nodesUsed].leftFirst = node.leftFirst;
         pool[nodesUsed].count = leftCount;
