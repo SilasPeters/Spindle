@@ -45,57 +45,71 @@ public class OptimizedBvhStrategy : IBvhStrategy
     }
 
     public bool TryIntersect(Ray ray, Interval distanceInterval, out Intersection intersection,
-        ref IntersectionDebugInfo intersectionDebugInfo) => IntersectNode(ray, distanceInterval, out intersection, ref intersectionDebugInfo, pool[0]);
-
-    private bool IntersectNode(Ray ray, Interval distanceInterval, out Intersection intersection,
-        ref IntersectionDebugInfo intersectionDebugInfo, OptimizedBvhNode node)
+        ref IntersectionDebugInfo intersectionDebugInfo)
     {
         intersectionDebugInfo.NumberOfTraversals++;
         
-        // Check if the ray collides with the node
-        if (!node.boundingBox.TryIntersect(ray, distanceInterval, out intersection, ref intersectionDebugInfo)) return false;
+        Stack<(float, OptimizedBvhNode)> stack = new();
+        stack.Push((0, pool[0]));
+        intersection = default;
+        intersection.Distance = float.PositiveInfinity;
+        bool intersected = false;
 
-        // Check closest collision with primitives if node is a leaf
-        if (node.isLeaf())
+        while (stack.Count > 0)
         {
-            bool intersected = false;
-            float closest = distanceInterval.Max;
-            intersection = Intersection.Undefined;
-
-            for (int i = 0; i < node.count; i++)
+            (float depthCheck, OptimizedBvhNode node) = stack.Pop();
+            
+            // Check if we haven't already collided with a closer primitive
+            if (depthCheck > intersection.Distance)
+                continue;
+            
+            // Check closest collision with primitives if node is a leaf
+            if (node.isLeaf())
             {
-                if (!primitives[indices[node.leftFirst + i]]
-                        .TryIntersect(ray, new Interval(distanceInterval.Min, closest), out var newIntersection,
-                            ref intersectionDebugInfo))
-                    continue;
+                float closest = intersection.Distance;
 
-                intersected = true;
-                closest = newIntersection.Distance;
-                intersection = newIntersection;
+                for (int i = 0; i < node.count; i++)
+                {
+                    if (!primitives[indices[node.leftFirst + i]]
+                            .TryIntersect(ray, new Interval(distanceInterval.Min, closest), out var newIntersection,
+                                ref intersectionDebugInfo))
+                        continue;
+
+                    intersected = true;
+                    closest = newIntersection.Distance;
+                    intersection = newIntersection;
+                }
+
+                continue;
             }
-
-            return intersected;
+            
+            // Collide with children bounding boxes
+            bool leftIntersected = pool[node.leftFirst].boundingBox.TryIntersect(ray, distanceInterval, out var leftIntersection, ref intersectionDebugInfo);
+            bool rightIntersected = pool[node.leftFirst + 1].boundingBox.TryIntersect(ray, distanceInterval, out var rightIntersection, ref intersectionDebugInfo);
+            
+            switch (leftIntersected)
+            {
+                case true when !rightIntersected:
+                    stack.Push((leftIntersection.Distance, pool[node.leftFirst]));
+                    break;
+                case false when rightIntersected:
+                    stack.Push((rightIntersection.Distance, pool[node.leftFirst + 1]));
+                    break;
+                case true when rightIntersected:
+                    if (leftIntersection.Distance <= rightIntersection.Distance)
+                    {
+                        stack.Push((leftIntersection.Distance, pool[node.leftFirst]));
+                        stack.Push((rightIntersection.Distance, pool[node.leftFirst + 1]));
+                    }
+                    else
+                    {
+                        stack.Push((rightIntersection.Distance, pool[node.leftFirst + 1]));
+                        stack.Push((leftIntersection.Distance, pool[node.leftFirst]));
+                    }
+                    break;
+            }
         }
-        
-        // Collide with children
-        bool leftIntersected = IntersectNode(ray, distanceInterval, out var leftIntersection, ref intersectionDebugInfo, pool[node.leftFirst]);
-        bool rightIntersected = IntersectNode(ray, distanceInterval, out var rightIntersection, ref intersectionDebugInfo, pool[node.leftFirst + 1]);
-
-        switch (leftIntersected)
-        {
-            case false when !rightIntersected:
-                intersection = Intersection.Undefined;
-                return false;
-            case true when !rightIntersected:
-                intersection = leftIntersection;
-                return true;
-            case false when rightIntersected:
-                intersection = rightIntersection;
-                return true;
-            default:
-                intersection = leftIntersection.Distance <= rightIntersection.Distance ? leftIntersection : rightIntersection;
-                return true;
-        }
+        return intersected;
     }
     
     private void Subdivide(ref OptimizedBvhNode node)
@@ -125,6 +139,7 @@ public class OptimizedBvhStrategy : IBvhStrategy
         // Check if a split is empty
         int leftCount = i - node.leftFirst;
         if (leftCount == 0 || leftCount == node.count) return;
+        
         // Create the child nodes
         pool[nodesUsed].leftFirst = node.leftFirst;
         pool[nodesUsed].count = leftCount;
@@ -162,16 +177,48 @@ public class OptimizedBvhStrategy : IBvhStrategy
                 boundsMax = Math.Max(boundsMax, prim.GetCentroid().AxisByInt(a));
             }
             if (boundsMin == boundsMax) continue;
-            float scale = (boundsMax - boundsMin) / splitBins;
-            for (int i = 1; i < splitBins; i++)
+            
+            // Create Bins
+            Bin[] bins = new Bin[splitBins];
+            for (int i = 0; i < splitBins; i++) bins[i] = new Bin();
+            float scale = splitBins / (boundsMax - boundsMin);
+            for (int i = 0; i < node.count; i++)
             {
-                float candidatePoint = boundsMin + i * scale;
-                float cost = CalculateSah(node, a,  candidatePoint);
-                if (cost < bestCost)
+                Geometry.Geometry prim = primitives[indices[node.leftFirst + i]];
+                int binIdx = Math.Min(splitBins - 1, (int)((prim.GetCentroid().AxisByInt(a) - boundsMin) * scale));
+                bins[binIdx].count++;
+                bins[binIdx].boundingBox.Add((AxisAlignedBoundingBox)prim.GetBoundingBox());
+            }
+            
+            // Gather data of the planes between the bins
+            int binsMin1 = splitBins - 1;
+            float[] leftArea = new float[binsMin1], rightArea = new float[binsMin1];
+            int[] leftCount = new int[binsMin1], rightCount = new int[binsMin1];
+            AxisAlignedBoundingBox leftBounds = AxisAlignedBoundingBox.Empty(), rightBounds = AxisAlignedBoundingBox.Empty();
+            int leftSum = 0, rightSum = 0;
+
+            for (int i = 0; i < binsMin1; i++)
+            {
+                leftCount[i] += bins[i].count;
+                leftBounds.Add(bins[i].boundingBox);
+                leftArea[i] = leftBounds.GetArea();
+
+                int rightIdx = binsMin1 - i - 1;
+                rightCount[rightIdx] += bins[i].count;
+                rightBounds.Add(bins[rightIdx + 1].boundingBox);
+                rightArea[rightIdx] = rightBounds.GetArea();
+            }
+            
+            // Calculate SAH per plane
+            scale = (boundsMax - boundsMin) / splitBins;
+            for (int i = 1; i < binsMin1; i++)
+            {
+                float planeCost = leftCount[i] * leftArea[i] + rightCount[i] * rightArea[i];
+                if (planeCost < bestCost)
                 {
-                    splitPoint = candidatePoint;
                     axis = a;
-                    bestCost = cost;
+                    splitPoint = boundsMin + scale * (i + 1);
+                    bestCost = planeCost;
                 }
             }
         }
@@ -201,4 +248,12 @@ public class OptimizedBvhStrategy : IBvhStrategy
         float cost = leftCount * leftBox.GetArea() +  rightCount * rightBox.GetArea();
         return cost > 0 ? cost :  float.PositiveInfinity;
     }
+}
+
+public struct Bin
+{
+    public AxisAlignedBoundingBox boundingBox = AxisAlignedBoundingBox.Empty();
+    public int count = 0;
+
+    public Bin() { }
 }
