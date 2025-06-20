@@ -1,7 +1,7 @@
 using System.Numerics;
 
 namespace Engine;
-
+    
 public class Utils
 {
     public static float Pi => 3.1415926535897932385f;

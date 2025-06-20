@@ -209,34 +209,23 @@ void main()
         _ebo = _gl.GenBuffer();
         _textureId = _gl.GenTexture();
         _gl.ActiveTexture(TextureUnit.Texture0);
+        _gl.UseProgram(_shaderProgram); // We dont use multiple shaders, so we can call UseProgram once
     }
 
     private void OnRender(double deltaTime) // TODO: to see immediate results, render every texture in a different frame
     {
         _gl.Clear(ClearBufferMask.ColorBufferBit);
 
-        foreach (var (camera, texture, displayRegion) in CameraManager.GetDisplayedCameraSlots())
+        //TODO: This stays the same and can be pre-calc'd before this method
+        Span<uint> indices = stackalloc uint[]
+        {
+            0u, 1u, 3u,
+            1u, 2u, 3u
+        };
+        
+        foreach (var (camera, texture, _, vertices) in CameraManager.GetDisplayedCameraSlots())
         {
             camera.RenderShot(Renderer, texture.Pixels);
-
-            // Prepare Vertex Buffer Object
-            Vector2 topLeft = screenCoordinatesToOpenGlCoordinates(new Vector2(displayRegion.Left, displayRegion.Top));
-            Vector2 bottomRight = screenCoordinatesToOpenGlCoordinates(new Vector2(displayRegion.Right, displayRegion.Bottom));
-
-            Span<float> vertices = stackalloc float[] // todo: remove texture coordinates
-            // 4 vertices of a quad filling a part of the screen, in the expected order (clockwise), but vertically flipped (OpenGL says 0,0 is on the bottom left instead of top left).
-            {
-                //          aPosition              | aTexCoords
-                bottomRight.X, bottomRight.Y, 0.0f,  1.0f, 1.0f,
-                // 1.0f,        -1.0f,        0.0f,  1.0f, 1.0f,
-                bottomRight.X, topLeft.Y,     0.0f,  1.0f, 0.0f,
-                // 1.0f,       1.0f,          0.0f,  1.0f, 0.0f,
-                topLeft.X,     topLeft.Y,     0.0f,  0.0f, 0.0f,
-                // -1.0f,      1.0f,          0.0f,  0.0f, 0.0f,
-                topLeft.X,     bottomRight.Y, 0.0f,  0.0f, 1.0f
-                // -1.0f,      -1.0f,         0.0f,  0.0f, 1.0f
-            };
-
             _gl.BindBuffer(BufferTargetARB.ArrayBuffer, _vbo); // Bind as an Array Buffer (VBO?)
             _gl.BufferData<float>(
                 BufferTargetARB.ArrayBuffer,
@@ -249,12 +238,6 @@ void main()
             // Basically, make up all triangles based on all points, where the indices
             // indicate what triangle belongs to what points. This way, a point can
             // be reused for multiple triangles: less data to store and process!
-            Span<uint> indices = stackalloc uint[]
-            {
-                0u, 1u, 3u,
-                1u, 2u, 3u
-            };
-
             _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, _ebo); // Bind as an EBO?
             _gl.BufferData<uint>(BufferTargetARB.ElementArrayBuffer, (nuint) (indices.Length * sizeof(uint)), indices, BufferUsageARB.DynamicDraw);
 
@@ -294,20 +277,9 @@ void main()
             // Assign the current texture to the texture uniform, such that the vertex shader gets this texture as input
             int location = _gl.GetUniformLocation(_shaderProgram, "uTexture"); // We use this method instead of a hardcoded 0 or 1 like we did earlier when defining layouts, because this time we chose not to define layouts and let GLSL figure things out.
             _gl.Uniform1(location, 0); // We bind texture unit 0 (defined earlier) to the uniform we found in the line above. Result: shader gets texture data
-
-
-
-
-            // CLEAN UP (reduces risks of changing wrong buffer, but not always required) todo: remove this at the end
-            // Unbind everything
-            _gl.BindVertexArray(0); // Must be cleaned first
-            _gl.BindBuffer(BufferTargetARB.ArrayBuffer, 0);
-            _gl.BindBuffer(BufferTargetARB.ElementArrayBuffer, 0);
-            _gl.BindTexture(TextureTarget.Texture2D, 0);
-
-            // We rebind some things which we cleaned up earlier...
+            
+            // Rebind array and texture for final draw
             _gl.BindVertexArray(_vao);
-            _gl.UseProgram(_shaderProgram);
             _gl.ActiveTexture(TextureUnit.Texture0);
             _gl.BindTexture(TextureTarget.Texture2D, _textureId);
             unsafe
@@ -317,14 +289,6 @@ void main()
 
             // _gl.DrawArrays(PrimitiveType.Triangles, 0, 6); // Draws a VBO
             // TODO: SwapBuffers might be nice?
-
-            continue;
-
-            Vector2 screenCoordinatesToOpenGlCoordinates(Vector2 screenPosition)
-            {
-                Vector2 displaySpace = new(DisplaySize.Width, DisplaySize.Height);
-                return (screenPosition / displaySpace * 2 - Vector2.One) * new Vector2(1, -1); // The last vector2 flips the image to meet OpenGL standards
-            }
         }
     }
 
