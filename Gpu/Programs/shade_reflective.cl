@@ -16,7 +16,6 @@ float3 normal(Sphere s, float3 point)
 }
 
 __kernel void shade_reflective(
-    __global const Material *materials, // TODO: we could make this a __constant buffer for possible caching optimizations
     __global QueueStates *queue_states,
     __global uint *shade_reflective_queue,
     __global uint *extend_ray_queue,
@@ -31,13 +30,7 @@ __kernel void shade_reflective(
     uint i = get_global_linear_id();
     uint path_state_index = shade_reflective_queue[i];
     PathState path_state = path_states[path_state_index];
-
     Sphere sphere = spheres[path_state.object_id];
-    Material mat = materials[path_state.material_id]; // Is always diffuse in this kernel, but properties differ
-
-    // ==> Determine possible luminance contribution
-
-    path_states[path_state_index].latest_luminance_sample = mat.albedo * mat.color;
 
     // ==> Calculate bouncing ray and enqueue for extending
 

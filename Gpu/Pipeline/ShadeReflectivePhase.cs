@@ -20,7 +20,6 @@ public class ShadeReflectivePhase : Phase
         OpenCLManager manager,
         string path,
         string kernel,
-        Buffer materials,
         Buffer queueStates,
         Buffer shadeReflectiveQueue,
         Buffer extendRayQueue,
@@ -36,7 +35,6 @@ public class ShadeReflectivePhase : Phase
             .AddKernel(
                 "shade_reflective.cl",
                 kernel,
-                materials,
                 queueStates,
                 shadeReflectiveQueue,
                 extendRayQueue,

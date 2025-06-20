@@ -10,7 +10,7 @@ uint convert_color(float3 rgb_floats)
 
 __kernel void logic(
   __global QueueStates *queue_states,
-  __global uint *new_ray_queue,
+  __global uint *extend_ray_queue,
   __global uint *shade_diffuse_queue,
   __global uint *shade_reflective_queue,
   __global PathState *path_states,
@@ -19,29 +19,28 @@ __kernel void logic(
   __global Sphere *spheres,
   __global Triangle *triangles,
   __global uint *image,
+  __global PathState *primary_rays,
   __global float3 *debug)
 {
     uint i = get_global_linear_id();
 
     // TODO: do not process rays still waiting in the queue of other kernels
 
-    // =====> If this state has never been initialized, initialize it now by creating a new primary ray
+    // =====> If this state has never been initialized or needs to be replaced, initialize it now by creating a new primary ray
 
     // TODO use a new variable for this. We have bytes unused anyway
-    // TODO: We could also just not execute this stage as first, but this solution gives more flexibility
     if (path_states[i].t == 0 || path_states[i].t == -66) // No ray has been shot, or ray has been terminated
     {
-        // Enqueue a new ray to be generated for this pixel
-        uint queue_index = atomic_inc(&queue_states->new_ray_length);
-        new_ray_queue[queue_index] = i; // Point to this ray
+        // Generate new primary ray (lookup-table replaces the generation phase of the wavefront pipeline)
+        // i is unique to current x and y coordinates
+        path_states[i].origin = primary_rays[i].origin;
+        path_states[i].direction = primary_rays[i].direction;
+        path_states[i].accumulated_luminance = primary_rays[i].accumulated_luminance;
+        path_states[i].latest_luminance_sample = primary_rays[i].latest_luminance_sample;
 
-        // Communicate screen information (assumes this kernel is run in 2D over all pixels)
-        float x = get_global_id(0);
-        float y = get_global_id(1);
-        path_states[i].origin = (float3)(x, y, 0); // Origin will be overwritten
-        uint width = get_global_size(0); // assumes image size == screen size
-        uint height = get_global_size(1);
-        path_states[i].direction = (float3)(width, height, 0);
+        // Enqueue primary ray to be extended
+        uint queue_length = atomic_inc(&queue_states->extend_ray_length); // TODO uses atomic, but we know that queue_length afterwards is increased with global_size(0). I tried to remove the atomic call, prehaps give it another go?
+        extend_ray_queue[queue_length] = i;
 
         return;
     }
@@ -61,16 +60,11 @@ __kernel void logic(
     // TODO: implement russian roulette or max depth
     if (path_states[i].t < 0) // No intersection, terminate
     {
-        // Determine ambient lighting (and skybox)
-        float a = .5 * path_states[i].direction.y + 1.0;
-        float3 ambient_color = (1 - a) * (float3)(1,1,1) + a * (float3)(0.5, 0.7, 1);
-        ambient_color = 1;
-
         // Taking the current determined sample, adjust the average
-        float sample_count = path_states[i].sample_count;
-        float3 new_sample = path_states[i].accumulated_luminance * ambient_color;
-        // path_states[i].averaged_samples *= (sample_count / (sample_count + 1)) + new_sample / (sample_count + 1);
-        path_states[i].averaged_samples = (path_states[i].averaged_samples * sample_count + new_sample) / (sample_count + 1);
+        uint sample_count = path_states[i].sample_count;
+        path_states[i].averaged_samples =
+            (path_states[i].averaged_samples * sample_count + path_states[i].accumulated_luminance)
+            / (sample_count + 1);
 
         // Take the new average and progress to next sample
         image[i] = convert_color(path_states[i].averaged_samples);
@@ -99,6 +93,9 @@ __kernel void logic(
             shade_reflective_queue[shade_reflective_queue_index] = i; // Point to this path state
             break;
     }
+
+    // We know the possible luminance in advance, store it already
+    path_states[i].latest_luminance_sample = mat.color_times_albedo;
 
     // Set arguments for the shade phase
     path_states[i].material_id = sphere.material;

@@ -20,9 +20,7 @@ __kernel void shadow(
 
     PathState justWhatIfThisRayWentToTheLight; // Slight hack to not have to write another type and intersect method. Dirty i know
     justWhatIfThisRayWentToTheLight.origin = point;
-    justWhatIfThisRayWentToTheLight.direction = normalize(lightPosition - point);
-
-    bool occluded = false;
+    justWhatIfThisRayWentToTheLight.direction = fast_normalize(lightPosition - point);
 
     // For every sphere, test intersection // TODO: for now we only support spheres
     uint num_spheres = scene_info->num_spheres;
@@ -31,15 +29,11 @@ __kernel void shadow(
         float t = IntersectSphere(justWhatIfThisRayWentToTheLight, spheres[x]);
         if (t > 0) // Any intersection towards light
         {
-            occluded = true;
+            // Mark sample as invalid because hitpoint is occluded
+            path_states[path_state_index].latest_luminance_sample *= .7f;
             break;
         }
     }
-
-    // =====> Mark sample as invalid if occluded
-
-    if (occluded) path_states[path_state_index].latest_luminance_sample *= .7f;
-
 
     // =====> Dequeue processed jobs for this kernel
 

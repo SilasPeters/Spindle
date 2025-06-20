@@ -22,14 +22,15 @@ public class LogicPhase : Phase
         string path,
         string kernel,
         Buffer queueStates,
-        Buffer shadeDefuseQueue,
+        Buffer extendRayQueue,
+        Buffer shadeDiffuseQueue,
         Buffer shadeReflectiveQueue,
-        Buffer newRayQueue,
         Buffer pathStatesBuffer,
         Buffer materialsBuffer,
         Buffer sceneInfoBuffer,
         Buffer spheresBuffer,
         Buffer trianglesBuffer,
+        Buffer primaryRaysBuffer,
         Buffer imageBuffer)
     {
         DebugBuffer = new ReadWriteBuffer<ClFloat3>(manager, new ClFloat3[pathStatesBuffer.GetLength()]);
@@ -39,15 +40,16 @@ public class LogicPhase : Phase
             .AddKernel("logic.cl",
                 kernel,
                 queueStates,
-                shadeDefuseQueue,
+                extendRayQueue,
+                shadeDiffuseQueue,
                 shadeReflectiveQueue,
-                newRayQueue,
                 pathStatesBuffer,
                 materialsBuffer,
                 sceneInfoBuffer, 
                 spheresBuffer,
                 trianglesBuffer,
                 imageBuffer,
+                primaryRaysBuffer,
                 DebugBuffer);
 
         KernelId = manager.GetKernelId(kernel);

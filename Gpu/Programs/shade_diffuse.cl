@@ -5,18 +5,17 @@
 #include "random.cl"
 #include "utils.cl"
 
-float3 hitpoint_from(PathState p)
+inline float3 hitpoint_from(const PathState p)
 {
     return p.origin + p.direction * p.t;
 }
 
-float3 normal(Sphere s, float3 point)
+inline float3 normal(const Sphere s, const float3 point)
 {
     return (point - s.position) / s.radius;
 }
 
 __kernel void shade_diffuse(
-    __global const Material *materials,
     __global QueueStates *queue_states,
     __global uint *shade_diffuse_queue,
     __global uint *extend_ray_queue,
@@ -31,13 +30,7 @@ __kernel void shade_diffuse(
     uint i = get_global_linear_id();
     uint path_state_index = shade_diffuse_queue[i];
     PathState path_state = path_states[path_state_index];
-
     Sphere sphere = spheres[path_state.object_id];
-    Material mat = materials[path_state.material_id]; // Is always reflective in this kernel, but properties differ
-
-    // =====> Determine possible luminance contribution
-
-    path_states[path_state_index].latest_luminance_sample = mat.albedo * mat.color;
 
     // =====> Calculate bouncing ray and enqueue for extending
 

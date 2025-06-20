@@ -32,9 +32,6 @@
       <None Update="Programs\extend.cl">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Programs\generate.cl">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="Programs\logic.cl">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>

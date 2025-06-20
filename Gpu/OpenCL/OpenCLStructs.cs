@@ -62,33 +62,27 @@ public struct ClPathState
         $"MaterialId: {MaterialId}, SampleCount: {SampleCount})";
 }
 
-[StructLayout(LayoutKind.Sequential, Size = 80)]
+[StructLayout(LayoutKind.Sequential, Size = 32)]
 public struct ClSceneInfo
 {
     public ClFloat3 CameraPosition; // 16 bytes
-    public ClFloat3 FrustumTopLeft; // 16 bytes
-    public ClFloat3 FrustumHorizontal; // 16 bytes
-    public ClFloat3 FrustumVertical; // 16 bytes
     public int NumSpheres; // 4 bytes
     public int NumTriangles; // 4 bytes
     // 8 bytes unused
 
     public override string ToString() =>
-        $"ClSceneInfo: (Spheres: {NumSpheres}, Triangles: {NumTriangles}, CameraPosition: {CameraPosition}," +
-        $" FrustumTopLeft: {FrustumTopLeft}, FrustumHorizontal: {FrustumHorizontal}, FrustumVertical: {FrustumVertical})";
+        $"ClSceneInfo: (Spheres: {NumSpheres}, Triangles: {NumTriangles}, CameraPosition: {CameraPosition}";
 }
 
 
 [StructLayout(LayoutKind.Sequential, Size = 32)]
-public struct ClMaterial // Depending on type, not all fields are used
+public struct ClMaterial
 {
-    public ClFloat3 Color; // 16 bytes
-    public float Albedo; // 4 bytes
+    public ClFloat3 ColorTimesAlbedo; // 16 bytes
     public MaterialType Type; // 4 bytes
     // 12 empty bytes
 
-    public override string ToString() =>
-        $"ClMaterial: Type: {Type}, Albedo: {Albedo} Color: {Color})";
+    public override string ToString() => $"ClMaterial: Type: {Type}, ColorTimesAlbedo: {ColorTimesAlbedo})";
 }
 
 public enum MaterialType : uint // 4 bytes
@@ -97,10 +91,9 @@ public enum MaterialType : uint // 4 bytes
     Reflective = 2
 }
 
-[StructLayout(LayoutKind.Sequential, Size = 20)]
+[StructLayout(LayoutKind.Sequential, Size = 16)]
 public struct ClQueueStates
 {
-    public uint NewRayLength; // 4 bytes
     public uint ExtendRayLength; // 4 bytes
     public uint ShadeDiffuseLength; // 4 bytes
     public uint ShadeReflectiveLength; // 4 bytes
@@ -108,7 +101,6 @@ public struct ClQueueStates
 
     /// <inheritdoc />
     public override string ToString() =>
-        $"{nameof(NewRayLength)}: {NewRayLength}, " +
         $"{nameof(ExtendRayLength)}: {ExtendRayLength}, " +
         $"{nameof(ShadeDiffuseLength)}: {ShadeDiffuseLength}, " +
         $"{nameof(ShadowRayLength)}: {ShadowRayLength}";
