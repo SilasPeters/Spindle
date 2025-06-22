@@ -146,10 +146,11 @@ public class OpenCLManager
         return this;
     }
 
-    public unsafe void ReadBufferToHost<T>(Buffer buffer, out T[] output) where T : unmanaged
+    public unsafe void ReadBufferToHost<T>(Buffer buffer, in Span<T> output) where T : unmanaged
     {
-        output = new T[buffer.GetLength()];
-        
+        if ((nuint)(output.Length * sizeof(T)) != buffer.GetSize())
+            throw new Exception("Output buffer not of same size as buffer to be read from GPU.");
+
         fixed (void* pValue = output)
         {
             // Read the output buffer back to the Host

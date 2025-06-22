@@ -83,8 +83,9 @@ public static partial class KernelTests
             throw new Exception($"Error {err}: finishing queue");
         }
 
+        ClPathState[] result = new ClPathState[1];
         // manager.ReadBufferToHost(phase.DebugBuffer, out ClFloat3[] result);
-        manager.ReadBufferToHost(raysBuffer, out ClPathState[] result);
+        manager.ReadBufferToHost(raysBuffer, result.AsSpan());
         for (int index = 0; index < result.Length; index++)
         {
             var item = result[index];

@@ -96,13 +96,10 @@ public static partial class KernelTests
             throw new Exception($"Error {err}: finishing queue");
         }
 
-        manager.ReadBufferToHost(phase.DebugBuffer, out ClFloat3[] debugState);
-        manager.ReadBufferToHost(queueStates, out ClQueueStates[] queueStatesState);
-        manager.ReadBufferToHost(shadeReflectiveQueue, out uint[] shadeDiffuseQueueState);
-        manager.ReadBufferToHost(extendRayQueue, out uint[] extendRayQueueState);
-        manager.ReadBufferToHost(shadowRayQueue, out uint[] shadowRayQueueState);
-        manager.ReadBufferToHost(randomStatesBuffer, out uint[] randomStatesBufferState);
-        manager.ReadBufferToHost(pathStatesBuffer, out ClPathState[] pathStatesBufferState);
+        ClFloat3[] debugState = new ClFloat3[numberOfRays];
+        ClPathState[] pathStatesBufferState = new ClPathState[numberOfRays];
+        manager.ReadBufferToHost(phase.DebugBuffer, debugState.AsSpan());
+        manager.ReadBufferToHost(pathStatesBuffer, pathStatesBufferState.AsSpan());
         var result = pathStatesBufferState;
         // var result = debugState;
         for (int index = 0; index < result.Length; index++)

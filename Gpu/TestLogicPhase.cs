@@ -101,7 +101,8 @@ public static partial class KernelTests
             throw new Exception($"Error {err}: finishing queue");
         }
 
-        manager.ReadBufferToHost(phase.DebugBuffer, out ClFloat3[] result);
+        ClFloat3[] result = new ClFloat3[numberOfRays];
+        manager.ReadBufferToHost(phase.DebugBuffer, result.AsSpan());
         // manager.ReadBufferToHost(imageBuffer, out uint[] result);
         for (int index = 0; index < result.Length; index++)
         {

@@ -1,7 +1,6 @@
 ﻿using Engine.Scenes;
 using Gpu.Cameras;
 using Gpu.OpenCL;
-using Silk.NET.OpenCL;
 
 namespace Gpu.Pipeline;
 
@@ -28,6 +27,8 @@ public class WavefrontPipeline
     public Buffer                         PathStates           { get; private set; }
     public Buffer                         DebugBuffer          { get; private set; }
 
+    private readonly ClQueueStates[] _queueStatesResult;
+
     public WavefrontPipeline(
         Scene scene, 
         OpenCLCamera camera)
@@ -36,11 +37,11 @@ public class WavefrontPipeline
         Camera = camera;
         SceneBuffers = BufferConverter.ConvertSceneToBuffers(Manager, scene, camera);
 
-        GlobalSize = new nuint[2] { (nuint)camera.ImageSize.Width, (nuint)camera.ImageSize.Height };
-        LocalSize = new nuint[2] { 32, 32 }; // TODO: let OpenCL decide by passing NULL, NULL (Or just NULL?)
+        GlobalSize = new[] { (nuint)camera.ImageSize.Width, (nuint)camera.ImageSize.Height };
+        LocalSize = new nuint[] { 32, 32u }; // TODO: let OpenCL decide by passing NULL, NULL (Or just NULL?)
 
         // Find number of rays, used for calculating buffer sizes
-        var numOfRays = camera.ImageSize.Width * camera.ImageSize.Height;
+        int numOfRays = camera.ImageSize.Width * camera.ImageSize.Height;
 
         // Create buffer with random seeds
         Random random = new(20283497); // TODO: supply custom seed
@@ -50,20 +51,22 @@ public class WavefrontPipeline
         // Add structs and functions that will be bound with every program
         Manager.AddUtilsProgram("structs.h", "structs.h");
         Manager.AddUtilsProgram("random.cl", "random.cl");
-        Manager.AddUtilsProgram("utils.cl", "utils.cl");
+        Manager.AddUtilsProgram("utils.cl",  "utils.cl");
 
         // Prepare output buffer
         ImageBuffer = new ReadWriteBuffer<int>(Manager, new int[numOfRays]);
 
         // Queue of 4 MB can hold 1_000_000 path state indices
         QueueStates = new ReadWriteBuffer<ClQueueStates>(Manager, new[] { new ClQueueStates() });
-        ExtendRayQueue = new ReadWriteBuffer<uint>(Manager, new uint[4_000_000 / sizeof(uint)]);
-        ShadeDiffuseQueue = new ReadWriteBuffer<uint>(Manager, new uint[4_000_000 / sizeof(uint)]);
+        ExtendRayQueue = new ReadWriteBuffer<uint>(Manager,       new uint[4_000_000 / sizeof(uint)]);
+        ShadeDiffuseQueue = new ReadWriteBuffer<uint>(Manager,    new uint[4_000_000 / sizeof(uint)]);
         ShadeReflectiveQueue = new ReadWriteBuffer<uint>(Manager, new uint[4_000_000 / sizeof(uint)]);
-        ShadowRayQueue = new ReadWriteBuffer<uint>(Manager, new uint[4_000_000 / sizeof(uint)]);
+        ShadowRayQueue = new ReadWriteBuffer<uint>(Manager,       new uint[4_000_000 / sizeof(uint)]);
 
         PathStates = new ReadWriteBuffer<ClPathState>(Manager, new ClPathState[numOfRays]);
         DebugBuffer = new ReadWriteBuffer<ClFloat3>(Manager, new ClFloat3[numOfRays]);
+
+        _queueStatesResult = new ClQueueStates[1]; // Only one state, but we need an array as buffer
 
         // Add buffers to the manager
         Manager.AddBuffers(
@@ -81,14 +84,6 @@ public class WavefrontPipeline
             PathStates);
 
         // Define pipeline dataflow (connect pipes)
-
-        // GeneratePhase = new GeneratePhase(
-        //     Manager, "generate.cl", "generate",
-        //     SceneBuffers.SceneInfo,
-        //     QueueStates,
-        //     NewRayQueue,
-        //     ExtendRayQueue,
-        //     numOfRays);
 
         ShadeDiffusePhase = new ShadeDiffusePhase(
             Manager, "shade_diffuse.cl", "shade_diffuse",
@@ -143,7 +138,7 @@ public class WavefrontPipeline
             ImageBuffer);
     }
 
-    public int[] Execute()
+    public void Execute(in Span<int> result)
     {
         // Performs one iteration of the Wavefront implementation
         // TODO: we could let the logic kernel call other kernels for less IO
@@ -152,6 +147,8 @@ public class WavefrontPipeline
         // ensuring high occupancy. However, it was difficult to not run the logic kernel over already enqueued pixels.
         // Thus we set it to 1 for now, so in some scenarios some rays are checked twice.
         const uint warpSize = 1u; // TODO: let OpenCL decide what's best based on GPU
+
+        Span<ClQueueStates> queueStatesResultSpan = _queueStatesResult.AsSpan();
 
         // Logic phase
         LogicPhase.EnqueueExecute(Manager, GlobalSize, LocalSize);
@@ -166,9 +163,9 @@ public class WavefrontPipeline
         // Manager.ReadBufferToHost(ShadeDiffusePhase.DebugBuffer, out ClFloat3[] shadeDebug0);
 
         // Shade diffuse phase
-        Manager.ReadBufferToHost(QueueStates, out ClQueueStates[] queueStatesShadeDiffuse);
+        Manager.ReadBufferToHost(QueueStates, queueStatesResultSpan);
         // Based on states of queues, set kernel size (let no thread be idle)
-        uint queuedShadeDiffuseCount = queueStatesShadeDiffuse[0].ShadeDiffuseLength;
+        uint queuedShadeDiffuseCount = _queueStatesResult[0].ShadeDiffuseLength;
         if (queuedShadeDiffuseCount > 0)
         {
             uint workItems;
@@ -196,9 +193,9 @@ public class WavefrontPipeline
         // Manager.ReadBufferToHost(ShadeDiffusePhase.DebugBuffer, out ClFloat3[] shadeDebug2);
 
         // Shade reflective phase
-        Manager.ReadBufferToHost(QueueStates, out ClQueueStates[] queueStatesShadeReflective);
+        Manager.ReadBufferToHost(QueueStates, queueStatesResultSpan);
         // Based on states of queues, set kernel size (let no thread be idle)
-        uint queuedShadeReflectiveCount = queueStatesShadeReflective[0].ShadeReflectiveLength;
+        uint queuedShadeReflectiveCount = _queueStatesResult[0].ShadeReflectiveLength;
         if (queuedShadeReflectiveCount > 0)
         {
             uint workItems;
@@ -226,9 +223,9 @@ public class WavefrontPipeline
         // Manager.ReadBufferToHost(ShadeDiffusePhase.DebugBuffer, out ClFloat3[] shadeDebug3);
 
         // Extend phase
-        Manager.ReadBufferToHost(QueueStates, out ClQueueStates[] queueStatesExtendRay);
+        Manager.ReadBufferToHost(QueueStates, queueStatesResultSpan);
         // Based on states of queues, set kernel size (let no thread be idle)
-        uint queuedExtendRayCount = queueStatesExtendRay[0].ExtendRayLength;
+        uint queuedExtendRayCount = _queueStatesResult[0].ExtendRayLength;
         if (queuedExtendRayCount > 0)
         {
             uint workItems;
@@ -257,9 +254,9 @@ public class WavefrontPipeline
 
 
         // Shadow phase
-        Manager.ReadBufferToHost(QueueStates, out ClQueueStates[] queueStatesShadow);
+        Manager.ReadBufferToHost(QueueStates, queueStatesResultSpan);
         // Based on states of queues, set kernel size (let no thread be idle)
-        uint queuedShadowRayCount = queueStatesShadow[0].ShadowRayLength;
+        uint queuedShadowRayCount = _queueStatesResult[0].ShadowRayLength;
         if (queuedShadowRayCount > 0)
         {
             uint workItems;
@@ -299,10 +296,6 @@ public class WavefrontPipeline
         // Manager.ReadBufferToHost(ShadeDiffusePhase.DebugBuffer, out ClFloat3[] shadeDebug);
 
         // Display current state
-        Manager.ReadBufferToHost(ImageBuffer, out int[] colors);
-
-        // Thread.Sleep(1000);
-
-        return colors; // TODO: return pointer or write directly into OpenGL memory
+        Manager.ReadBufferToHost(ImageBuffer, result);
     }
 }
