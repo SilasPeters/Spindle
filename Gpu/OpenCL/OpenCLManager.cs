@@ -154,7 +154,7 @@ public class OpenCLManager
         fixed (void* pValue = output)
         {
             // Read the output buffer back to the Host
-            var err = Cl.EnqueueReadBuffer(Queue.Id, buffer.Id, true, 0, buffer.GetSize(), pValue, 0, null, null);
+            var err = Cl.EnqueueReadBuffer(Queue.Id, buffer.Id, false, 0, buffer.GetSize(), pValue, 0, null, null);
             
             if (err != (int)ErrorCodes.Success)
             {

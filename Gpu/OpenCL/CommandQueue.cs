@@ -8,7 +8,7 @@ public class CommandQueue
 
     public unsafe CommandQueue(OpenCLManager manager)
     {
-        Id = manager.Cl.CreateCommandQueue(manager.Context.Id, manager.Context.Device.Id, CommandQueueProperties.None, null);
+        Id = manager.Cl.CreateCommandQueue(manager.Context.Id, manager.Context.Device.Id, CommandQueueProperties.OutOfOrderExecModeEnable, null);
 
         if (Id == IntPtr.Zero)
         {
