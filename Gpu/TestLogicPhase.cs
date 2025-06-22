@@ -70,6 +70,7 @@ public static partial class KernelTests
         ReadWriteBuffer<uint> shadeDiffuseQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
         ReadWriteBuffer<uint> shadeReflectiveQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
         ReadWriteBuffer<uint> extendRayQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
+        ReadWriteBuffer<uint> shadowRayQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
         ReadWriteBuffer<ClPathState> pathStatesBuffer = new(manager, pathStates);
         ReadOnlyBuffer<ClMaterial> materialsBuffer = new(manager, materials);
         ReadOnlyBuffer<ClSceneInfo> sceneInfoBuffer = new(manager, sceneInfo);
@@ -83,7 +84,7 @@ public static partial class KernelTests
         manager.AddUtilsProgram("random.cl", "random.cl");
         manager.AddUtilsProgram("utils.cl", "utils.cl");
         LogicPhase phase = new(manager, "logic.cl", "logic",
-            queueStates, shadeDiffuseQueue, shadeReflectiveQueue, extendRayQueue, pathStatesBuffer, materialsBuffer, sceneInfoBuffer, sphereBuffer, triangleBuffer, primaryRayBuffer, imageBuffer);
+            queueStates, shadeDiffuseQueue, shadeReflectiveQueue, shadowRayQueue, extendRayQueue, pathStatesBuffer, materialsBuffer, sceneInfoBuffer, sphereBuffer, triangleBuffer, primaryRayBuffer, imageBuffer);
 
         var globalSize = new nuint[2]
         {
@@ -102,8 +103,8 @@ public static partial class KernelTests
         }
 
         ClFloat3[] result = new ClFloat3[numberOfRays];
-        manager.ReadBufferToHost(phase.DebugBuffer, result.AsSpan());
-        // manager.ReadBufferToHost(imageBuffer, out uint[] result);
+        manager.EnqueueReadBufferToHost(phase.DebugBuffer, result.AsSpan());
+        // manager.EnqueueReadBufferToHost(imageBuffer, out uint[] result);
         for (int index = 0; index < result.Length; index++)
         {
             var item = result[index];

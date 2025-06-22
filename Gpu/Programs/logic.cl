@@ -13,6 +13,7 @@ __kernel void logic(
   __global uint *extend_ray_queue,
   __global uint *shade_diffuse_queue,
   __global uint *shade_reflective_queue,
+  __global uint *shadow_ray_queue,
   __global PathState *path_states,
   __global Material *materials,
   __global SceneInfo *sceneInfo,
@@ -86,6 +87,11 @@ __kernel void logic(
         case mat_diffuse:
             shade_diffuse_queue_index = atomic_inc(&queue_states->shade_diffuse_length); // TODO: assumes there always is space
             shade_diffuse_queue[shade_diffuse_queue_index] = i; // Point to this path state
+
+            // =====> Enqueue shadow ray, in parallel with shading kernels
+
+            uint shadow_ray_queue_length = atomic_inc(&queue_states->shadow_ray_length); // TODO: assumes there always is space left on the queue
+            shadow_ray_queue[shadow_ray_queue_length] = i;
             break;
 
         case mat_reflective:

@@ -40,4 +40,14 @@ public class CommandQueue
             throw new Exception($"Error {err}: Kernel could not be queued");
         }
     }
+
+    public void FinishQueue(OpenCLManager manager)
+    {
+        int err = manager.Cl.Finish(Id);
+        
+        if (err != (int)ErrorCodes.Success)
+        {
+            throw new Exception($"Error {err}: finishing queue");
+        }
+    }
 }
