@@ -70,9 +70,9 @@ var teaPotImporter2 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(7, -2
 var teaPotImporter3 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(0, 8, 20), matKitchenWhite);
 var teaPotImporter4 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(-20, 40, 80), matKitchenWhite);
 var teaPotImporter5 = new ObjMeshImporter("Assets/teapot.obj", new Vector3(0, -2.5f, 8), matKitchenWhite);
-//var scene = new Scene(objects, lights); // Naive approach
+var scene = new Scene(objects, lights); // Naive approach
 //var scene = new BvhScene(new SplitDirectionStrategy(3), new List<Geometry>{groundOrb}, lights, teaPotImporter5); // Uses BVH
-var scene = new BvhScene(new OptimizedBvhStrategy(6), objects, lights, teaPotImporter1); // Uses Optimize BVH
+//var scene = new BvhScene(new OptimizedBvhStrategy(6), objects, lights, teaPotImporter1); // Uses Optimize BVH
 
 Console.WriteLine("Done creating acceleration structure");
 
