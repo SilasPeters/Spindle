@@ -13,6 +13,7 @@ public class SampledCamera : Camera
 
     private ConcurrentQueue<(int, int)> queue = new();
     private int[] span;
+    private int tileX, tileY;
 
     // ReSharper disable once InconsistentNaming
     /// <inheritdoc />
@@ -22,6 +23,7 @@ public class SampledCamera : Camera
         AveragedSamples = new Vector3[imageSize.Width * imageSize.Height];
         span = new int[imageSize.Width * imageSize.Height];
         OnTransform += () => NumberOfSamples = 0;
+        tileX = tileY = 4;
     }
 
     /// <inheritdoc />
@@ -30,19 +32,37 @@ public class SampledCamera : Camera
         base.SetImageSize(size);
         AveragedSamples = new Vector3[size.Width * size.Height];
         NumberOfSamples = 0;
+        span = new int[size.Width * size.Height];
+        // Tiles size must be wholly divisible by both image width and height
+        bool setX, setY;
+        setX = setY = false;
+        foreach (int mod in new[] { 7, 5, 4, 3, 1 })
+        {
+            if (setY && setX) break;
+            
+            if (ImageSize.Height % mod == 0)
+            {
+                tileY = mod;
+                setY = true;
+            }
+
+            if (ImageSize.Width % mod == 0)
+            {
+                tileX = mod;
+                setX = true;
+            }
+        }
     }
 
     public override void RenderShot(IRenderer renderer, in Span<int> pixels)
     {
         IntersectionDebugInfo intersectionDebugInfo = new();
-
-        int tileSize = 4; // Tiles size must be wholly divisible by both image width and height
         
         // Initiate the work queue
         queue.Clear(); // Clear to be safe (should be empty)
-        for (var y = 0; y < this.ImageSize.Height; y += tileSize)
+        for (var y = 0; y < this.ImageSize.Height; y += tileY)
         {
-            for (var x = 0; x < this.ImageSize.Width; x += tileSize)
+            for (var x = 0; x < this.ImageSize.Width; x += tileX)
             {
                 queue.Enqueue((x, y));
             }
@@ -57,11 +77,11 @@ public class SampledCamera : Camera
                 queue.TryDequeue(out var coords);
                 (x, y) = coords;
                 // Cast rays in tiles of tileSize to improve data locality
-                for (var v = 0; v < tileSize; v++)
+                for (var v = 0; v < tileY; v++)
                 {
-                    for (var u = 0; u < tileSize; u++)
+                    for (var u = 0; u < tileX; u++)
                     {
-                        ref Vector3 averagedSample = ref AveragedSamples[(y + v) * this.ImageSize.Width + (x + u)];
+                        ref Vector3 averagedSample = ref AveragedSamples[(y + v) * ImageSize.Width + (x + u)];
                     
                         var newSample = Vector3.One;
                         var ray = GetRayTowardsPixel((x + u), (y + v));
