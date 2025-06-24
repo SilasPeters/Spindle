@@ -19,7 +19,6 @@ __kernel void shade_diffuse(
     __global QueueStates *queue_states,
     __global uint *shade_diffuse_queue,
     __global uint *extend_ray_queue,
-    __global uint *shadow_ray_queue,
     __global uint *random_states,
     __global PathState *path_states,
     __global Sphere *spheres,
@@ -42,13 +41,10 @@ __kernel void shade_diffuse(
     path_states[path_state_index].origin = hitpoint;
     path_states[path_state_index].direction = bounceDirection;
 
-    // Enqueue this path state for extension
+    // =====> Enqueue this path state for extension
+
     uint extend_ray_queue_length = atomic_inc(&queue_states->extend_ray_length); // TODO: assumes there always is space left on the queue
     extend_ray_queue[extend_ray_queue_length] = path_state_index;
-
-    // =====> Enqueue shadow ray
-    uint shadow_ray_queue_length = atomic_inc(&queue_states->shadow_ray_length); // TODO: assumes there always is space left on the queue
-    shadow_ray_queue[shadow_ray_queue_length] = path_state_index;
 
     // =====> Dequeue processed jobs for this kernel
 

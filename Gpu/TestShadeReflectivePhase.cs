@@ -98,8 +98,8 @@ public static partial class KernelTests
 
         ClFloat3[] debugState = new ClFloat3[numberOfRays];
         ClPathState[] pathStatesBufferState = new ClPathState[numberOfRays];
-        manager.ReadBufferToHost(phase.DebugBuffer, debugState.AsSpan());
-        manager.ReadBufferToHost(pathStatesBuffer, pathStatesBufferState.AsSpan());
+        manager.EnqueueReadBufferToHost(phase.DebugBuffer, debugState.AsSpan());
+        manager.EnqueueReadBufferToHost(pathStatesBuffer, pathStatesBufferState.AsSpan());
         var result = pathStatesBufferState;
         // var result = debugState;
         for (int index = 0; index < result.Length; index++)

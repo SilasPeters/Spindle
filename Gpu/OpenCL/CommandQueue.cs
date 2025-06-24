@@ -8,7 +8,7 @@ public class CommandQueue
 
     public unsafe CommandQueue(OpenCLManager manager)
     {
-        Id = manager.Cl.CreateCommandQueue(manager.Context.Id, manager.Context.Device.Id, CommandQueueProperties.None, null);
+        Id = manager.Cl.CreateCommandQueue(manager.Context.Id, manager.Context.Device.Id, CommandQueueProperties.OutOfOrderExecModeEnable, null);
 
         if (Id == IntPtr.Zero)
         {
@@ -38,6 +38,16 @@ public class CommandQueue
         if (err != (int) ErrorCodes.Success)
         {
             throw new Exception($"Error {err}: Kernel could not be queued");
+        }
+    }
+
+    public void FinishQueue(OpenCLManager manager)
+    {
+        int err = manager.Cl.Finish(Id);
+        
+        if (err != (int)ErrorCodes.Success)
+        {
+            throw new Exception($"Error {err}: finishing queue");
         }
     }
 }

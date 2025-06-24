@@ -146,7 +146,7 @@ public class OpenCLManager
         return this;
     }
 
-    public unsafe void ReadBufferToHost<T>(Buffer buffer, in Span<T> output) where T : unmanaged
+    public unsafe void EnqueueReadBufferToHost<T>(Buffer buffer, in Span<T> output) where T : unmanaged
     {
         if ((nuint)(output.Length * sizeof(T)) != buffer.GetSize())
             throw new Exception("Output buffer not of same size as buffer to be read from GPU.");
@@ -154,17 +154,11 @@ public class OpenCLManager
         fixed (void* pValue = output)
         {
             // Read the output buffer back to the Host
-            var err = Cl.EnqueueReadBuffer(Queue.Id, buffer.Id, true, 0, buffer.GetSize(), pValue, 0, null, null);
+            var err = Cl.EnqueueReadBuffer(Queue.Id, buffer.Id, false, 0, buffer.GetSize(), pValue, 0, null, null);
             
             if (err != (int)ErrorCodes.Success)
             {
                 throw new Exception($"Error {err}: enqueuing read buffer");
-            }
-            err = Cl.Finish(Queue.Id);
-            
-            if (err != (int)ErrorCodes.Success)
-            {
-                throw new Exception($"Error {err}: finishing queue");
             }
         }
     }
@@ -190,5 +184,10 @@ public class OpenCLManager
             .Where(k => k.Name == kernel)
             .Select(k => k.Id)
             .First();
+    }
+
+    public void FinishQueue()
+    {
+        Queue.FinishQueue(this);
     }
 }

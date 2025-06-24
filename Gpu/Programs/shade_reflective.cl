@@ -42,11 +42,13 @@ __kernel void shade_reflective(
     path_states[path_state_index].origin = hitpoint;
     path_states[path_state_index].direction = bounceDirection;
 
-    // Enqueue this path state for extension
+    // =====> Enqueue this path state for extension
+
     uint extend_ray_queue_length = atomic_inc(&queue_states->extend_ray_length); // TODO: assumes there always is space left on the queue
     extend_ray_queue[extend_ray_queue_length] = path_state_index;
 
-    // ==> Dequeue processed jobs for this kernel
+    // =====> Dequeue processed jobs for this kernel
+
     atomic_dec(&queue_states->shade_reflective_length);
 
     // Move unprocessed part of queue back to begin of buffer (always less than 1 local_size amount of items)

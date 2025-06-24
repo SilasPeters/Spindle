@@ -23,7 +23,6 @@ public class ShadeDiffusePhase : Phase
         Buffer queueStates,
         Buffer shadeDiffuseQueue,
         Buffer extendRayQueue,
-        Buffer shadowRayQueue,
         Buffer randomStates,
         Buffer pathStates,
         Buffer spheres)
@@ -38,7 +37,6 @@ public class ShadeDiffusePhase : Phase
                 queueStates,
                 shadeDiffuseQueue,
                 extendRayQueue,
-                shadowRayQueue,
                 randomStates,
                 pathStates,
                 spheres,

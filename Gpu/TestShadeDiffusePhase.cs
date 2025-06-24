@@ -67,18 +67,17 @@ public static partial class KernelTests
         ReadOnlyBuffer<ClMaterial> materialsBuffer = new(manager, materials);
         ReadWriteBuffer<uint> shadeDiffuseQueue = new(manager, Enumerable.Range(0, numberOfRays + 4).Select(i => (uint)i).ToArray());
         ReadWriteBuffer<uint> extendRayQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
-        ReadWriteBuffer<uint> shadowRayQueue = new(manager, new uint[4_000_000 / sizeof(uint)]);
         ReadWriteBuffer<uint> randomStatesBuffer = new(manager, randomStates);
         ReadWriteBuffer<ClQueueStates> queueStates = new(manager, new[] { new ClQueueStates() { ShadeDiffuseLength = (uint)shadeDiffuseQueue.GetLength() } }); // Set all lengths to 0
         ReadWriteBuffer<ClPathState> pathStatesBuffer = new(manager, pathStates);
         ReadOnlyBuffer<ClSphere> sphereBuffer = new(manager, spheres);
 
-        manager.AddBuffers(materialsBuffer, queueStates, shadeDiffuseQueue, extendRayQueue, shadowRayQueue, randomStatesBuffer, pathStatesBuffer, sphereBuffer);
+        manager.AddBuffers(materialsBuffer, queueStates, shadeDiffuseQueue, extendRayQueue, randomStatesBuffer, pathStatesBuffer, sphereBuffer);
         manager.AddUtilsProgram("structs.h", "structs.h");
         manager.AddUtilsProgram("random.cl", "random.cl");
         manager.AddUtilsProgram("utils.cl", "utils.cl");
         ShadeDiffusePhase phase = new(manager, "shade_diffuse.cl", "shade_diffuse",
-            queueStates, shadeDiffuseQueue, extendRayQueue, shadowRayQueue, randomStatesBuffer, pathStatesBuffer, sphereBuffer);
+            queueStates, shadeDiffuseQueue, extendRayQueue, randomStatesBuffer, pathStatesBuffer, sphereBuffer);
 
         var globalSize = new nuint[2]
         {
@@ -97,7 +96,7 @@ public static partial class KernelTests
         }
 
         ClPathState[] pathStatesBufferState = new ClPathState[numberOfRays];
-        manager.ReadBufferToHost(pathStatesBuffer, pathStatesBufferState.AsSpan());
+        manager.EnqueueReadBufferToHost(pathStatesBuffer, pathStatesBufferState.AsSpan());
         var result = pathStatesBufferState;
         // var result = debugState;
         for (int index = 0; index < result.Length; index++)
